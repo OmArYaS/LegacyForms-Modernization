@@ -1,0 +1,56 @@
+@{
+    var user = new
+    {
+        Name = Session["EmployeeName"] as string,
+        Role = Session["EmployeeRole"] as string
+    };
+}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <title>@ViewBag.Title — LegacyForms portal</title>
+    <link href="@Url.Content("~/Content/site.css")" rel="stylesheet" type="text/css" />
+</head>
+<body>
+    <header class="topbar">
+        <div class="brand">LegacyForms <span class="era">MVC 5 · Knockout</span></div>
+        @if (!string.IsNullOrEmpty(user.Name))
+        {
+            <div class="session">
+                <span class="who">@user.Name (@user.Role)</span>
+                @using (Html.BeginForm("Logout", "Account", FormMethod.Post, new { @class = "logout-form" }))
+                {
+                    @Html.AntiForgeryToken()
+                    <button type="submit" class="btn ghost">Sign out</button>
+                }
+            </div>
+        }
+    </header>
+
+    <nav class="mainnav">
+        <ul>
+            @if (!string.IsNullOrEmpty(user.Name))
+            {
+                <li>@Html.ActionLink("Submissions", "Index", "Submissions")</li>
+                <li>@Html.ActionLink("New form", "New", "Submissions")</li>
+            }
+            else
+            {
+                <li>@Html.ActionLink("Sign in", "Login", "Account")</li>
+            }
+            <li class="tag">Strangler era: submissions module moves to the Angular SPA — see docs/migration-strategy.md</li>
+        </ul>
+    </nav>
+
+    <main class="page">
+        @RenderBody()
+    </main>
+
+    <footer class="foot">LegacyForms.Web — demo slice representing the pre-modernization portal.</footer>
+
+    <script src="@Url.Content("~/Scripts/jquery-3.6.0.min.js")" type="text/javascript"></script>
+    <script src="@Url.Content("~/Scripts/knockout-3.5.3.min.js")" type="text/javascript"></script>
+    @RenderSection("scripts", required: false)
+</body>
+</html>

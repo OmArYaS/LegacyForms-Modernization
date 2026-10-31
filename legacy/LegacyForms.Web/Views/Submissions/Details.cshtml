@@ -1,0 +1,178 @@
+@model LegacyForms.Web.Data.SubmissionDetail
+@{
+    ViewBag.Title = "Submission " + Model.SubmissionId;
+    var canDecide = (bool)(ViewBag.CanDecide ?? false);
+    var canWithdraw = (bool)(ViewBag.CanWithdraw ?? false);
+}
+
+<h2 class="screen-title">@Model.TemplateTitle <span class="muted">#@Model.SubmissionId</span></h2>
+
+<div class="detail-meta">
+    <span class="state @Model.Status">@Model.Status.Replace('_', ' ')</span>
+    <span class="muted">requested by @Model.RequestorName</span>
+    <span class="muted">@Model.SubmittedAt?.ToString("yyyy-MM-dd HH:mm")</span>
+    @if (!string.IsNullOrEmpty(Model.DecisionNote))
+    {
+        <span class="decision-note">@Model.DecisionNote</span>
+    }
+</div>
+
+<section class="card-block">
+    <h3>Form contents</h3>
+    <div id="form-fields" data-schema="@Html.Raw(Model.FieldSchema)" data-payload="@Html.Raw(Model.Payload)">
+        <!-- Knockout renders the dynamic template fields here -->
+    </div>
+</section>
+
+<section class="card-block">
+    <h3>Approval steps</h3>
+    <table class="grid">
+        <thead>
+            <tr><th>#</th><th>Role</th><th>Decision</th><th>By</th><th>When</th><th>Note</th></tr>
+        </thead>
+        <tbody>
+            @foreach (var step in Model.Steps)
+            {
+                <tr>
+                    <td>@step.StepSequence</td>
+                    <td>@step.RoleRequired</td>
+                    <td><span class="state @step.Decision">@step.Decision</span></td>
+                    <td>@(step.DecidedByName ?? "—")</td>
+                    <td>@(step.DecidedAt?.ToString("yyyy-MM-dd HH:mm") ?? "—")</td>
+                    <td>@(step.Note ?? "—")</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</section>
+
+@if (canDecide || canWithdraw)
+{
+    <section class="card-block" id="decision-panel" data-version="@Model.Version">
+        <h3>Your call</h3>
+        <label class="inline-label">Note (optional)
+            <input type="text" id="decision-note" maxlength="500" />
+        </label>
+        <div class="btn-row">
+            @if (canDecide)
+            {
+                <button class="btn"  data-decision="approved" data-role="@Session["EmployeeRole"]">Approve</button>
+                <button class="btn danger" data-decision="rejected" data-role="@Session["EmployeeRole"]">Reject</button>
+            }
+            @if (canWithdraw)
+            {
+                <button class="btn ghost" data-decision="withdrawn">Withdraw</button>
+            }
+        </div>
+        <p id="decision-result" class="feedback"></p>
+    </section>
+}
+
+<section class="card-block">
+    <h3>History</h3>
+    <ul class="event-trail">
+        @foreach (var ev in Model.Events)
+        {
+            <li>
+                <span class="mono">@ev.EventType</span>
+                <span class="muted">@ev.OccurredAt.ToString("yyyy-MM-dd HH:mm")</span>
+                @if (!string.IsNullOrEmpty(ev.Detail))
+                {
+                    <span>@ev.Detail</span>
+                }
+            </li>
+        }
+    </ul>
+</section>
+
+<p>@Html.ActionLink("← back to the catalogue", "Index")</p>
+
+@section scripts {
+<script type="text/javascript">
+    // ── Knockout viewmodel: dynamic fields + the decision panel ──────────
+    // Renders whatever the template's field_schema describes (the same JSON
+    // the modern Angular renderer consumes — parity guaranteed by contract).
+    (function (ko, $) {
+        'use strict';
+
+        var host = document.getElementById('form-fields');
+        if (!host) return;
+
+        var schema = JSON.parse(host.getAttribute('data-schema'));
+        var payload = JSON.parse(host.getAttribute('data-payload'));
+
+        var vm = {
+            fields: (schema.fields || []).map(function (field) {
+                return {
+                    key: field.key,
+                    label: field.label,
+                    type: field.type,
+                    value: payload[field.key] === undefined ? '' : payload[field.key]
+                };
+            })
+        };
+
+        host.innerHTML = '<ul class="field-list" data-bind="foreach: fields">' +
+            '<li><span class="field-label" data-bind="text: label"></span>' +
+            '<span class="field-value" data-bind="text: value"></span></li>' +
+            '</ul>';
+
+        ko.applyBindings(vm, host);
+
+        // ── Decision panel: jQuery $.ajax posting to MVC with anti-forgery ──
+        var panel = document.getElementById('decision-panel');
+        if (!panel) return;
+
+        var version = parseInt(panel.getAttribute('data-version'), 10);
+        var antiForgeryToken = legacyFormsAntiForgeryToken();
+
+        $(panel).find('button[data-decision]').on('click', function (e) {
+            e.preventDefault();
+
+            var decision = $(this).data('decision');
+            var note = $('#decision-note').val() || null;
+            var $result = $('#decision-result');
+
+            $.ajax({
+                url: '@Url.Action("Decide", "Submissions")',
+                type: 'POST',
+                data: {
+                    __RequestVerificationToken: antiForgeryToken,
+                    id: @Model.SubmissionId,
+                    decision: decision,
+                    note: note,
+                    version: version
+                },
+                success: function (res) {
+                    if (res.ok) {
+                        $result.text('Recorded — reloading…').removeClass('fail');
+                        window.location.reload();
+                    } else {
+                        $result.text('Not accepted: ' + humanize(res.code)).addClass('fail');
+                    }
+                },
+                error: function () {
+                    $result.text('Network error — try again.').addClass('fail');
+                }
+            });
+        });
+
+        function legacyFormsAntiForgeryToken() {
+            // Layout form (header) carries the token; the detail panel posts it.
+            var token = $('input[name="__RequestVerificationToken"]').first();
+            return token.val();
+        }
+
+        function humanize(code) {
+            var map = {
+                'FORMS:CONCURRENT_UPDATE': 'Someone decided faster than you — the view is stale, reload.',
+                'FORMS:ROLE_MISMATCH': 'Your role cannot discharge this step.',
+                'FORMS:TERMINAL_STATE': 'Already closed.',
+                'FORMS:NOT_SUBMISSION_OWNER': 'Only the requestor can withdraw.',
+                'FORMS:WITHDRAW_TOO_LATE': 'A decision already landed.'
+            };
+            return map[code] || code;
+        }
+    })(window.ko, window.jQuery);
+</script>
+}

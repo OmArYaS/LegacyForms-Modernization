@@ -1,0 +1,59 @@
+@model LegacyForms.Web.Controllers.SubmissionIndexModel
+@{
+    ViewBag.Title = "Submissions";
+    var statuses = new[] { "", "submitted", "in_review", "approved", "rejected", "withdrawn" };
+}
+
+<h2 class="screen-title">Submissions</h2>
+
+<div class="filter-bar">
+    <span class="muted">Filter by state:</span>
+    @foreach (var s in statuses)
+    {
+        var label = string.IsNullOrEmpty(s) ? "all" : s.Replace('_', ' ');
+        if (string.Equals(Model.StatusFilter, s, System.StringComparison.OrdinalIgnoreCase))
+        {
+            <span class="chip chip-active">@label</span>
+        }
+        else
+        {
+            <a class="chip" href="@Url.Action("Index", new { status = s, page = 1 })">@label</a>
+        }
+    }
+</div>
+
+<table class="grid">
+    <thead>
+        <tr>
+            <th>#</th>
+            <th>Form</th>
+            @if (!Model.IsEmployee)
+            {
+                <th>Requestor</th>
+            }
+            <th>State</th>
+            <th>Submitted</th>
+            <th></th>
+        </tr>
+    </thead>
+    <tbody>
+        @if (Model.Items.Count == 0)
+        {
+            <tr><td colspan="6" class="empty-row">Nothing matches this filter.</td></tr>
+        }
+        @foreach (var item in Model.Items)
+        {
+            <tr>
+                <td>@item.SubmissionId</td>
+                <td>@item.TemplateTitle</td>
+                @if (!Model.IsEmployee)
+                {
+                    <td>@item.RequestorName</td>
+                }
+                <td><span class="state @item.Status">@item.Status.Replace('_', ' ')</span></td>
+                <td>@(item.SubmittedAt?.ToString("yyyy-MM-dd HH:mm") ?? "—")</td>
+                <td>@Html.ActionLink("open", "Details", new { id = item.SubmissionId })</td>
+            </tr>
+        }
+    </tbody>
+</table>

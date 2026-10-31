@@ -1,0 +1,37 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net472</TargetFramework>
+    <LangVersion>8</LangVersion>
+    <OutputType>Library</OutputType>
+    <MvcBuildViews>false</MvcBuildViews>
+    <RootNamespace>LegacyForms.Web</RootNamespace>
+    <AssemblyName>LegacyForms.Web</AssemblyName>
+    <Description>MVC 5 + Knockout portal representing the pre-modernization LegacyForms application.</Description>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Reference Include="System.Web" />
+    <!-- dynamic binding support for ViewBag access in controllers -->
+    <Reference Include="Microsoft.CSharp" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.AspNet.Mvc" Version="5.2.9" />
+    <PackageReference Include="Microsoft.AspNet.Razor" Version="3.2.9" />
+    <PackageReference Include="Microsoft.AspNet.WebPages" Version="3.2.9" />
+    <PackageReference Include="MySql.Data" Version="8.0.33" />
+    <!-- Lets the SDK build .NET Framework 4.7.2 anywhere (incl. Linux CI agents). -->
+    <PackageReference Include="Microsoft.NETFramework.ReferenceAssemblies" Version="1.0.3" PrivateAssets="All" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Include="Web.config" />
+    <Content Include="Views\**\*.cshtml" />
+    <Content Include="Views\Web.config" />
+    <Content Include="Content\**\*.css" />
+    <Content Include="Scripts\**\*.js" />
+    <Content Include="Global.asax" />
+  </ItemGroup>
+
+</Project>

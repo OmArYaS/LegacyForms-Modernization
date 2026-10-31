@@ -1,0 +1,105 @@
+# ModernForms programme CI — keeps BOTH eras compiling in parallel.
+#
+# Strangler-fig discipline: the legacy MVC 5 portal stays on life support with a
+# green build while the modern ASP.NET Core + Angular slice grows, its
+# contract tests walking the same FORMS:* rule book the MySQL procedures
+# enforce. A PR is only mergeable while both lights are on.
+#
+# Wire in Azure DevOps: Pipelines → New Pipeline → Existing YAML → pipelines/azure-pipelines.yml
+name: ModernForms-CI
+
+trigger:
+  branches:
+    include:
+      - main
+  paths:
+    exclude:
+      - '*.md'
+      - 'docs/**'
+
+pr:
+  branches:
+    include:
+      - main
+
+jobs:
+  # ── Legacy era: MVC 5 + Knockout on .NET Framework 4.7.2 ─────────────────────
+  - job: legacy_era
+    displayName: Legacy portal (net472 build)
+    pool:
+      vmImage: 'windows-latest'
+    steps:
+      - task: UseDotNet@2
+        displayName: Install .NET SDK (for SDK-style build of the net472 project)
+        inputs:
+          version: '10.0.x'
+
+      # The legacy project targets .NET Framework 4.7.2 and compiles via
+      # Microsoft.NETFramework.ReferenceAssemblies — no full VS image needed.
+      - script: dotnet build legacy\LegacyForms.Web\LegacyForms.Web.csproj -c Release --nologo
+        displayName: Build legacy MVC 5 portal (net472)
+
+      # MySQL 8 build-time contract check: the procedures that carry the
+      # FORMS:* rules must stay valid SQL while the migration runs.
+      - bash: |
+          echo "Legacy database contract lives in database/mysql/*.sql"
+          echo "Schema objects expected: form_template, form_submission, approval_step,"
+          echo "form_event, employee, vw_workload + usp_* procedures."
+          test -f database/mysql/01_schema.sql && test -f database/mysql/02_stored_procedures.sql && test -f database/mysql/03_seed.sql
+        displayName: Legacy database contract files present
+
+      - publish: $(Build.SourcesDirectory)/legacy/LegacyForms.Web/bin
+        artifact: legacy-build
+        displayName: Publish legacy build output
+
+  # ── Modern era: ASP.NET Core + EF Core + xUnit + Angular ─────────────────────
+  - job: modern_era
+    displayName: Modern platform (net10 test + Angular build)
+    pool:
+      vmImage: 'ubuntu-latest'
+    variables:
+      buildConfiguration: 'Release'
+      solution: 'modern/ModernForms.sln'
+    steps:
+      - task: UseDotNet@2
+        displayName: Install .NET SDK 10
+        inputs:
+          version: '10.0.x'
+
+      - script: dotnet build $(solution) -c $(buildConfiguration) --nologo
+        displayName: Build modern solution
+
+      - task: DotNetCoreCLI@2
+        displayName: Run xUnit suite (schema rules + workflow mirrors + API contracts)
+        inputs:
+          command: test
+          projects: $(solution)
+          arguments: >-
+            -c $(buildConfiguration)
+            --collect:"XPlat Code Coverage"
+            --results-directory $(Agent.TempDirectory)/coverage
+          publishTestResults: true
+
+      - script: dotnet publish modern/src/ModernForms.Api/ModernForms.Api.csproj -c $(buildConfiguration) -o $(Build.ArtifactStagingDirectory)/api --nologo
+        displayName: Publish ModernForms API
+
+      - task: NodeTool@0
+        displayName: Install Node 20
+        inputs:
+          versionSpec: '20.x'
+
+      - script: npm ci
+        displayName: npm ci (Angular webapp)
+        workingDirectory: modern/webapp
+
+      - script: npm run build -- --configuration production
+        displayName: Angular production build
+        workingDirectory: modern/webapp
+
+      - publish: $(Build.ArtifactStagingDirectory)/api
+        artifact: modernforms-api-drop
+        displayName: Publish API artifact
+
+      - publish: modern/webapp/dist
+        artifact: modernforms-web-drop
+        displayName: Publish webapp artifact

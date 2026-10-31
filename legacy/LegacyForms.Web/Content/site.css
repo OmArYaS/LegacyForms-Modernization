@@ -1,0 +1,94 @@
+/* LegacyForms.Web — pre-modernization styling (2010s-era look, deliberately plain) */
+body {
+    margin: 0;
+    font-family: Tahoma, 'Segoe UI', sans-serif;
+    font-size: 13px;
+    color: #333;
+    background: #f4f0e8;
+}
+
+.topbar {
+    display: flex; align-items: center; justify-content: space-between;
+    background: #5b3f66; color: #fff; padding: 10px 20px;
+}
+.brand { font-size: 16px; font-weight: bold; }
+.brand .era { margin-left: 8px; font-size: 10px; opacity: .7; font-weight: normal; }
+.session { display: flex; align-items: center; gap: 8px; }
+.session .who { opacity: .9; }
+.logout-form { display: inline; margin: 0; }
+
+.mainnav { background: #4a3352; padding: 0 20px; }
+.mainnav ul { margin: 0; padding: 0; list-style: none; display: flex; gap: 16px; }
+.mainnav li { padding: 8px 0; }
+.mainnav a { color: #e8d8ee; text-decoration: none; }
+.mainnav .tag { margin-left: auto; color: #b9a3c4; font-size: 10px; }
+
+.page { padding: 20px; max-width: 1100px; }
+.foot { padding: 12px 20px; color: #9a8fa0; font-size: 10px; }
+
+.screen-title { color: #4a3352; margin: 0 0 12px; }
+.muted { color: #8a8a8a; }
+.mono { font-family: Consolas, monospace; }
+
+.card-block {
+    background: #fff; border: 1px solid #ddd3c9; border-radius: 4px;
+    padding: 14px 18px; margin-bottom: 14px;
+}
+
+.grid { width: 100%; border-collapse: collapse; background: #fff; }
+.grid th, .grid td { padding: 7px 10px; border-bottom: 1px solid #e4ddd3; text-align: left; }
+.grid th { background: #ece7de; font-size: 11px; text-transform: uppercase; letter-spacing: .04em; color: #5b4d5f; }
+.grid tr:hover td { background: #faf7f2; }
+.empty-row { text-align: center; color: #9a8fa0; padding: 18px; }
+
+.filter-bar { margin-bottom: 12px; display: flex; gap: 6px; align-items: center; }
+.chip { padding: 3px 10px; border-radius: 10px; background: #e9e2d6; color: #5b4d5f; text-decoration: none; font-size: 11px; }
+.chip-active { background: #5b3f66; color: #fff; }
+
+.state { padding: 2px 8px; border-radius: 9px; font-size: 11px; font-weight: bold; }
+.state.draft { background: #e5e5e5; color: #555; }
+.state.submitted { background: #d9e8f5; color: #2b6aa8; }
+.state.in_review { background: #f5efd9; color: #a8802b; }
+.state.approved { background: #e0f0dd; color: #3f8a3a; }
+.state.rejected { background: #f5d9d9; color: #a83b3b; }
+.state.withdrawn { background: #eae3f5; color: #7a65a8; }
+.state.pending { background: #eee; color: #777; }
+
+.btn {
+    background: #5b3f66; color: #fff; border: 0; border-radius: 3px;
+    padding: 7px 14px; font: inherit; cursor: pointer;
+}
+.btn:hover { background: #6c4c79; }
+.btn.ghost { background: transparent; color: #5b3f66; border: 1px solid #b9a3c4; }
+.btn.danger { background: #a83b3b; }
+
+.btn-row { display: flex; gap: 8px; }
+
+label { display: block; color: #6b6b6b; margin-bottom: 8px; }
+.inline-label { display: block; margin-bottom: 10px; }
+input, select {
+    display: block; width: 320px; padding: 6px 8px; font: inherit;
+    border: 1px solid #cfc6bb; border-radius: 3px; background: #fff; margin-top: 3px;
+}
+
+.login-card { background: #fff; border: 1px solid #ddd3c9; padding: 20px; width: 380px; }
+.hint { color: #9a8fa0; font-size: 11px; }
+.error-text { color: #a83b3b; font-weight: bold; }
+
+.detail-meta { display: flex; gap: 12px; align-items: center; margin-bottom: 12px; }
+.decision-note { background: #eee; padding: 3px 8px; border-radius: 3px; font-style: italic; }
+
+.field-list { margin: 0; padding: 0; list-style: none; }
+.field-list li { padding: 5px 0; border-bottom: 1px dotted #e0d8cd; }
+.field-label { display: inline-block; width: 180px; color: #6b6b6b; }
+.field-value { font-weight: bold; }
+
+.event-trail { margin: 0; padding-left: 18px; }
+.event-trail li { padding: 3px 0; }
+.event-trail .mono { display: inline-block; width: 140px; }
+.feedback.fail { color: #a83b3b; font-weight: bold; }
+.feedback { color: #3f8a3a; }
+
+.template-list { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.template-item { background: #fff; border: 1px solid #ddd3c9; border-radius: 4px; padding: 16px; }
+.template-form { margin-top: 12px; }

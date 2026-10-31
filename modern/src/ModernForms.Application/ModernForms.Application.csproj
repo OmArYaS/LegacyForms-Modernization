@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <Description>Use-case layer: the submission workflow engine with rules mirrored from the legacy stored procedures.</Description>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.EntityFrameworkCore" Version="10.0.14" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\ModernForms.Domain\ModernForms.Domain.csproj" />
+  </ItemGroup>
+
+</Project>

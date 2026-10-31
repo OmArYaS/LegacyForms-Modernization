@@ -1,0 +1,134 @@
+@model System.Collections.Generic.IList<LegacyForms.Web.Data.TemplateRow>
+@{
+    ViewBag.Title = "New form";
+}
+
+<h2 class="screen-title">Start a form</h2>
+
+<ul class="template-list">
+    @foreach (var template in Model)
+    {
+        <li class="template-item" data-id="@template.TemplateId" data-schema="@Html.Raw(template.FieldSchema)">
+            <strong>@template.Title</strong>
+            <p class="muted">@template.Description</p>
+
+            @* The Knockout chooser: renders the blank form from the template's
+               field schema and posts through the AJAX create endpoint. *@
+            <form class="template-form">
+                @* Fields injected by script below — schema-driven, no server round trip. *@
+                <div class="template-fields"></div>
+                <div class="btn-row">
+                    <button type="button" class="btn" data-mode="submit">Submit now</button>
+                    <button type="button" class="btn ghost" data-mode="draft">Save as draft</button>
+                </div>
+                <p class="feedback"></p>
+            </form>
+        </li>
+    }
+</ul>
+
+@section scripts {
+<script type="text/javascript">
+    (function (ko, $) {
+        'use strict';
+
+        $('.template-item').each(function () {
+            var $item = $(this);
+            var schema = JSON.parse($item.attr('data-schema'));
+            var templateId = parseInt($item.attr('data-id'), 10);
+            var $fields = $item.find('.template-fields');
+
+            gen(htmlFor(schema.fields)).into($fields);
+
+            $item.find('button[data-mode]').on('click', function () {
+                var payload = collect($fields);
+                var submitNow = $(this).data('mode') === 'submit';
+
+                post({
+                    url: '@Url.Action("Create", "Submissions")',
+                    token: antiForgeryToken(),
+                    templateId: templateId,
+                    payloadJson: JSON.stringify(payload),
+                    submitNow: submitNow
+                }, $item.find('.feedback'));
+            });
+        });
+
+        // ── helpers ─────────────────────────────────────────────────────────
+        function htmlFor(fields) {
+            var html = '';
+            for (var i = 0; i < fields.length; i++) {
+                var f = fields[i];
+                var required = f.required ? ' required' : '';
+                html += '<label class="inline-label">' + escapeHtml(f.label);
+                if (f.type === 'select') {
+                    html += '<select class="tf" data-key="' + f.key + '"' + required + '>';
+                    html += '<option value=""></option>';
+                    for (var o = 0; o < f.options.length; o++) {
+                        html += '<option>' + escapeHtml(f.options[o]) + '</option>';
+                    }
+                    html += '</select>';
+                } else if (f.type === 'date') {
+                    html += '<input class="tf" type="date" data-key="' + f.key + '"' + required + ' />';
+                } else if (f.type === 'number') {
+                    html += '<input class="tf" type="number" step="0.01" min="' + (f.min || 0) + '" data-key="' + f.key + '"' + required + ' />';
+                } else {
+                    html += '<input class="tf" type="text" data-key="' + f.key + '"' +
+                        (f.maxLength ? ' maxlength="' + f.maxLength + '"' : '') + required + ' />';
+                }
+                html += '</label>';
+            }
+            return html;
+        }
+
+        function gen(html) {
+            return { into: function ($target) { $target.html(html); } };
+        }
+
+        function collect($fields) {
+            var payload = {};
+            $fields.find('.tf').each(function () {
+                var $el = $(this);
+                var key = $el.attr('data-key');
+                payload[key] = $el.val() === '' ? null : $el.val();
+            });
+            return payload;
+        }
+
+        // NOTE: validation of required fields beyond the browser's [required]
+        // happens server-side in the modern API; the legacy proc layer keeps
+        // the template-active check as the last line of defence.
+        function post(settings, $feedback) {
+            $.ajax({
+                url: settings.url,
+                type: 'POST',
+                data: {
+                    __RequestVerificationToken: settings.token,
+                    templateId: settings.templateId,
+                    payloadJson: settings.payloadJson,
+                    submitNow: settings.submitNow
+                },
+                success: function (res) {
+                    if (res.ok) {
+                        $feedback.text('Saved as #' + res.submissionId + ' — redirecting…');
+                        window.location = '@Url.Action("Details", "Submissions")' + '/' + res.submissionId;
+                    } else {
+                        $feedback.text('Not accepted: ' + res.code);
+                    }
+                },
+                error: function () {
+                    $feedback.text('Network error — try again.');
+                }
+            });
+        }
+
+        function antiForgeryToken() {
+            return $('input[name="__RequestVerificationToken"]').first().val();
+        }
+
+        function escapeHtml(text) {
+            return $('<div/>').text(text == null ? '' : String(text)).html();
+        }
+    })(window.ko, window.jQuery);
+</script>
+}

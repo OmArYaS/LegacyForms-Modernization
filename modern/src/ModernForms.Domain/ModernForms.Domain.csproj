@@ -1,0 +1,7 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <Description>Core domain for the modern forms platform: submission state machine, schema-driven field validation and the approval workflow.</Description>
+  </PropertyGroup>
+
+</Project>

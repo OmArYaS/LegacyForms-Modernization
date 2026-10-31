@@ -1,0 +1,40 @@
+# ── .NET ──────────────────────────────────────────────────────────────────────
+bin/
+obj/
+*.user
+*.suo
+cruft.db
+
+# Local demo databases (the SQLite profiles seed themselves at boot)
+*.db
+*.db-shm
+*.db-wal
+
+# ── Visual Studio / Rider / VS Code ──────────────────────────────────────────
+.vs/
+.idea/
+.vscode/*
+!.vscode/launch.json
+!.vscode/settings.json
+
+# ── .NET Framework / IIS ─────────────────────────────────────────────────────
+*.ide
+*.lock
+locale/
+
+# ── Node / Angular ───────────────────────────────────────────────────────────
+node_modules/
+webapp/dist/
+.angular/
+npm-debug.log*
+yarn-error.log*
+
+# ── Test / coverage ──────────────────────────────────────────────────────────
+TestResults/
+coverage/
+*.coverage
+*.trx
+
+# ── OS noise ─────────────────────────────────────────────────────────────────
+Thumbs.db
+.DS_Store
