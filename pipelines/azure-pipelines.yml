@@ -88,8 +88,8 @@ jobs:
         inputs:
           versionSpec: '20.x'
 
-      - script: npm ci
-        displayName: npm ci (Angular webapp)
+      - script: npm install --no-audit --no-fund
+        displayName: npm install (Angular webapp; no lockfile is committed)
         workingDirectory: modern/webapp
 
       - script: npm run build -- --configuration production
